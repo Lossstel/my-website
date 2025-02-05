@@ -180,107 +180,38 @@
     <!-- AXIOS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.3.4/axios.min.js"></script>
     <script>
-        document.getElementById("submit-btn").addEventListener("click", sendMessage);
-        document.getElementById("word-input").addEventListener("keypress", function (e) {
-            if (e.key === "Enter") {
-                sendMessage();
-            }
-        });
-        document.getElementById("retry-btn").addEventListener("click", sendMessage);
+        document.getElementById("submit-btn").addEventListener("click", function () {
+  sendToChatGPT();
+});
 
-        let retryMessage = null;
+function sendToChatGPT() {
+  let value = document.getElementById("word-input").value;
 
-        function sendMessage() {
-            const userInput = document.getElementById("word-input").value.trim();
-            if (!userInput) {
-                alert("يرجى كتابة رسالة!");
-                return;
-            }
+  if (!value.trim()) {
+      alert("Please enter a message!");
+      return;
+  }
 
-            // Clear input field
-            document.getElementById("word-input").value = "";
-            const chatWindow = document.getElementById("chat-window");
+  let body = {
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: value }],
+      temperature: 1, // Corrected from 'tempreture' to 'temperature'
+  };
 
-            // Display user's message in the chat window with timestamp
-            const userMsgElement = document.createElement("p");
-            userMsgElement.className = "user";
-            userMsgElement.textContent = `أنت: ${userInput}`;
-            const timestamp = document.createElement("span");
-            timestamp.className = "timestamp";
-            timestamp.textContent = formatDate(new Date());
-            userMsgElement.appendChild(timestamp);
-            chatWindow.appendChild(userMsgElement);
+  let headers = {
+      Authorization: "Bearer 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",
+  };
 
-            // Show loading indicator
-            document.getElementById("loading-indicator").style.display = "block";
-            document.getElementById("submit-btn").disabled = true;
-
-            // Prepare request data
-            const model = document.getElementById("model-select").value;
-            const temperature = parseFloat(document.getElementById("temperature-slider").value);
-            const body = {
-                model: model,
-                messages: [{ role: "user", content: userInput }],
-                temperature: temperature,
-            };
-            const headers = {
-                Authorization: "Bearer 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",
-            };
-
-            // Hide error message and retry button
-            document.getElementById("error-message").style.display = "none";
-            document.getElementById("retry-btn").style.display = "none";
-
-            axios.post("https://api.openai.com/v1/chat/completions", body, { headers: headers })
-                .then((response) => {
-                    const botReply = response.data.choices[0].message.content;
-                    const botMsgElement = document.createElement("p");
-                    botMsgElement.className = "bot";
-                    botMsgElement.textContent = `الذكاء الاصطناعي: ${botReply}`;
-                    const timestamp = document.createElement("span");
-                    timestamp.className = "timestamp";
-                    timestamp.textContent = formatDate(new Date());
-                    botMsgElement.appendChild(timestamp);
-                    chatWindow.appendChild(botMsgElement);
-
-                    // Scroll to the bottom of the chat window
-                    chatWindow.scrollTop = chatWindow.scrollHeight;
-
-                    // Save conversation to localStorage
-                    saveConversationToLocalStorage(chatWindow.innerHTML);
-                })
-                .catch((error) => {
-                    console.error("Error sending request to ChatGPT:", error);
-                    document.getElementById("error-message").style.display = "block";
-                    document.getElementById("retry-btn").style.display = "block";
-                    retryMessage = userInput;
-                })
-                .finally(() => {
-                    // Hide loading indicator and enable submit button
-                    document.getElementById("loading-indicator").style.display = "none";
-                    document.getElementById("submit-btn").disabled = false;
-                });
-        }
-
-        function saveConversationToLocalStorage(conversation) {
-            localStorage.setItem("conversation", conversation);
-        }
-
-        function loadConversationFromLocalStorage() {
-            const savedConversation = localStorage.getItem("conversation");
-            if (savedConversation) {
-                document.getElementById("chat-window").innerHTML = savedConversation;
-            }
-        }
-
-        function formatDate(date) {
-            return date.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
-        }
-
-        // Load conversation on page load
-        window.onload = function () {
-            loadConversationFromLocalStorage();
-        };
+  axios.post("https://api.openai.com/v1/chat/completions", body, { headers: headers })
+      .then((response) => {
+          let reply = response.data.choices[0].message.content;
+          document.getElementById("reply-content").textContent = reply;
+      })
+      .catch((error) => {
+          console.error("Error sending request to ChatGPT:", error);
+          alert("An error occurred while processing your request.");
+      });
+}
     </script>
 </body>
 </html>
