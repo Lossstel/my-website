@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سواليف AI</title>
+    <title>ABA-a</title>
     <!-- GOOGLE FONTS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,23 +41,6 @@
             margin: 0;
             font-size: 24px;
         }
-        #contact-info {
-            text-align: center;
-            padding: 10px;
-            background-color: #3b3b3b;
-            border-bottom: 1px solid #444;
-        }
-        #contact-info p {
-            margin: 5px 0;
-            font-size: 14px;
-        }
-        #contact-info a {
-            color: #00b09b;
-            text-decoration: none;
-        }
-        #contact-info a:hover {
-            text-decoration: underline;
-        }
         #chat-window {
             height: 350px;
             overflow-y: auto;
@@ -89,6 +72,13 @@
             width: fit-content;
             max-width: 70%;
         }
+        #chat-window span.timestamp {
+            font-size: 10px;
+            color: #aaa;
+            position: absolute;
+            bottom: -15px;
+            right: 10px;
+        }
         #user-input {
             display: flex;
             padding: 10px;
@@ -117,6 +107,43 @@
         #submit-btn:hover {
             background: linear-gradient(to right, #00a884, #8dbd33);
         }
+        #error-message {
+            color: #ff4d4d;
+            text-align: center;
+            padding: 10px;
+            display: none;
+        }
+        #loading-indicator {
+            display: none;
+            text-align: center;
+            color: #00b09b;
+            font-weight: bold;
+        }
+        #retry-btn {
+            display: none;
+            margin: 10px auto;
+            padding: 10px 20px;
+            border: none;
+            background: linear-gradient(to right, #ff4d4d, #ff7f50);
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 25px;
+        }
+        #retry-btn:hover {
+            background: linear-gradient(to right, #e3342f, #ff9966);
+        }
+        .settings {
+            margin: 10px;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background-color: #3b3b3b;
+        }
+        .settings label {
+            margin-right: 10px;
+            color: #fff;
+        }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -127,12 +154,7 @@
     
     <div class="chat-container">
         <div id="chat-header">
-            <h1>سواليف AI</h1>
-        </div>
-        <div id="contact-info">
-            <p>للاتصال بنا:</p>
-            <p><strong>الهاتف:</strong> <a href="tel:+201276948001">+201276948001</a></p>
-            <p><strong>البريد الإلكتروني:</strong> <a href="mailto:abanoubadel890@gmail.com">abanoubadel890@gmail.com</a></p>
+            <h1>تحدث معي</h1>
         </div>
         <div id="chat-window">
             <p class="bot">أهلا بك.. اطرح أي سؤال يدور في بالك</p>
@@ -143,6 +165,15 @@
         <div id="user-input">
             <input id="word-input" type="text" placeholder="اسأل ما تشاء للذكاء الاصطناعي...">
             <button id="submit-btn">&#10148;</button>
+        </div>
+        <div class="settings">
+            <label for="model-select">اختر النموذج:</label>
+            <select id="model-select">
+                <option value="gpt-4o-mini">GPT-4o Mini</option>
+                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+            </select>
+            <label for="temperature-slider">حرارة الإجابات:</label>
+            <input id="temperature-slider" type="range" min="0" max="1" step="0.1" value="0.7">
         </div>
     </div>
 
@@ -157,6 +188,8 @@
         });
         document.getElementById("retry-btn").addEventListener("click", sendMessage);
 
+        let retryMessage = null;
+
         function sendMessage() {
             const userInput = document.getElementById("word-input").value.trim();
             if (!userInput) {
@@ -164,25 +197,39 @@
                 return;
             }
 
+            // Clear input field
             document.getElementById("word-input").value = "";
             const chatWindow = document.getElementById("chat-window");
 
+            // Display user's message in the chat window with timestamp
             const userMsgElement = document.createElement("p");
             userMsgElement.className = "user";
             userMsgElement.textContent = `أنت: ${userInput}`;
+            const timestamp = document.createElement("span");
+            timestamp.className = "timestamp";
+            timestamp.textContent = formatDate(new Date());
+            userMsgElement.appendChild(timestamp);
             chatWindow.appendChild(userMsgElement);
 
+            // Show loading indicator
             document.getElementById("loading-indicator").style.display = "block";
             document.getElementById("submit-btn").disabled = true;
 
+            // Prepare request data
+            const model = document.getElementById("model-select").value;
+            const temperature = parseFloat(document.getElementById("temperature-slider").value);
             const body = {
-                model: "gpt-4o-mini",
+                model: model,
                 messages: [{ role: "user", content: userInput }],
-                temperature: 0.7,
+                temperature: temperature,
             };
             const headers = {
                 Authorization: "Bearer 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",
             };
+
+            // Hide error message and retry button
+            document.getElementById("error-message").style.display = "none";
+            document.getElementById("retry-btn").style.display = "none";
 
             axios.post("https://api.openai.com/v1/chat/completions", body, { headers: headers })
                 .then((response) => {
@@ -190,20 +237,50 @@
                     const botMsgElement = document.createElement("p");
                     botMsgElement.className = "bot";
                     botMsgElement.textContent = `الذكاء الاصطناعي: ${botReply}`;
+                    const timestamp = document.createElement("span");
+                    timestamp.className = "timestamp";
+                    timestamp.textContent = formatDate(new Date());
+                    botMsgElement.appendChild(timestamp);
                     chatWindow.appendChild(botMsgElement);
 
+                    // Scroll to the bottom of the chat window
                     chatWindow.scrollTop = chatWindow.scrollHeight;
+
+                    // Save conversation to localStorage
+                    saveConversationToLocalStorage(chatWindow.innerHTML);
                 })
                 .catch((error) => {
                     console.error("Error sending request to ChatGPT:", error);
                     document.getElementById("error-message").style.display = "block";
                     document.getElementById("retry-btn").style.display = "block";
+                    retryMessage = userInput;
                 })
                 .finally(() => {
+                    // Hide loading indicator and enable submit button
                     document.getElementById("loading-indicator").style.display = "none";
                     document.getElementById("submit-btn").disabled = false;
                 });
         }
+
+        function saveConversationToLocalStorage(conversation) {
+            localStorage.setItem("conversation", conversation);
+        }
+
+        function loadConversationFromLocalStorage() {
+            const savedConversation = localStorage.getItem("conversation");
+            if (savedConversation) {
+                document.getElementById("chat-window").innerHTML = savedConversation;
+            }
+        }
+
+        function formatDate(date) {
+            return date.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Load conversation on page load
+        window.onload = function () {
+            loadConversationFromLocalStorage();
+        };
     </script>
 </body>
 </html>
