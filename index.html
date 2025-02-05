@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900;1000&display=swap" rel="stylesheet">
     <style>
-        /* CSS */
+        /* CSS (unchanged) */
         body {
             font-family: 'Cairo', sans-serif;
             background-color: #1e1e1e;
@@ -151,7 +151,6 @@
     </style>
 </head>
 <body>
-    
     <div class="chat-container">
         <div id="chat-header">
             <h1>تحدث معي</h1>
@@ -169,7 +168,7 @@
         <div class="settings">
             <label for="model-select">اختر النموذج:</label>
             <select id="model-select">
-                <option value="gpt-4o-mini">GPT-4o Mini</option>
+                <option value="gpt-4">GPT-4</option>
                 <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
             </select>
             <label for="temperature-slider">حرارة الإجابات:</label>
@@ -180,38 +179,66 @@
     <!-- AXIOS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.3.4/axios.min.js"></script>
     <script>
-        document.getElementById("submit-btn").addEventListener("click", function () {
-  sendToChatGPT();
-});
+        document.getElementById("submit-btn").addEventListener("click", sendToChatGPT);
+        document.getElementById("retry-btn").addEventListener("click", sendToChatGPT);
 
-function sendToChatGPT() {
-  let value = document.getElementById("word-input").value;
+        function sendToChatGPT() {
+            const userInput = document.getElementById("word-input").value.trim();
+            if (!userInput) {
+                alert("الرجاء إدخال رسالة!");
+                return;
+            }
 
-  if (!value.trim()) {
-      alert("Please enter a message!");
-      return;
-  }
+            // Show loading indicator
+            document.getElementById("loading-indicator").style.display = "block";
+            document.getElementById("error-message").style.display = "none";
+            document.getElementById("retry-btn").style.display = "none";
 
-  let body = {
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: value }],
-      temperature: 1, // Corrected from 'tempreture' to 'temperature'
-  };
+            // Add user message to chat window
+            const chatWindow = document.getElementById("chat-window");
+            const userMessage = document.createElement("p");
+            userMessage.className = "user";
+            userMessage.textContent = userInput;
+            chatWindow.appendChild(userMessage);
 
-  let headers = {
-      Authorization: "Bearer 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",
-  };
+            // Prepare API request
+            const model = document.getElementById("model-select").value;
+            const temperature = parseFloat(document.getElementById("temperature-slider").value);
 
-  axios.post("https://api.openai.com/v1/chat/completions", body, { headers: headers })
-      .then((response) => {
-          let reply = response.data.choices[0].message.content;
-          document.getElementById("reply-content").textContent = reply;
-      })
-      .catch((error) => {
-          console.error("Error sending request to ChatGPT:", error);
-          alert("An error occurred while processing your request.");
-      });
-}
+            const body = {
+                model: model,
+                messages: [{ role: "user", content: userInput }],
+                temperature: temperature,
+            };
+
+            const headers = {
+                Authorization: "Bearer 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", // Replace with your backend endpoint
+            };
+
+            // Send request to ChatGPT
+            axios.post("https://api.openai.com/v1/chat/completions", body, { headers })
+                .then((response) => {
+                    const reply = response.data.choices[0].message.content;
+
+                    // Add bot response to chat window
+                    const botMessage = document.createElement("p");
+                    botMessage.className = "bot";
+                    botMessage.textContent = reply;
+                    chatWindow.appendChild(botMessage);
+
+                    // Scroll to bottom of chat window
+                    chatWindow.scrollTop = chatWindow.scrollHeight;
+                })
+                .catch((error) => {
+                    console.error("Error sending request to ChatGPT:", error);
+                    document.getElementById("error-message").style.display = "block";
+                    document.getElementById("retry-btn").style.display = "block";
+                })
+                .finally(() => {
+                    document.getElementById("loading-indicator").style.display = "none";
+                    document.getElementById("word-input").value = ""; // Clear input
+                });
+        }
     </script>
 </body>
 </html>
