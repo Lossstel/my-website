@@ -17,7 +17,7 @@ function sendToChatGPT() {
   };
 
   let headers = {
-      Authorization: "Bearer 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",
+      Authorization: "Bearer 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",
   };
 
   axios.post("https://api.openai.com/v1/chat/completions", body, { headers: headers })
